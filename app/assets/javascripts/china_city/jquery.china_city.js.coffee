@@ -1,21 +1,18 @@
 (($) ->
   $.fn.china_city = () ->
     @each ->
-      $selects = $(@).find('.city-select')
-      $selects
-      .on 'change.city', ->
+      selects = $(@).find('.city-select')
+      selects.change ->
         $this = $(@)
-        select_index = $selects.index($this)+1
-        select = $selects.eq(select_index)
-        # clear children's options
-        $selects.slice($selects.index(@) + 1).each ->
-          $(@).children().slice(1).remove()
-        # when select value not empty
-        if select[0] and $(@).val()
-          $.get "/china_city/" + $(@).val(), (data) ->
-            options = select[0].options
-            $.each data.data, (i, item) -> options.add new Option(item.data[0], item.data[1])
+        next_selects = selects.slice(selects.index(@) + 1) # empty all children city
+        $("option:gt(0)", next_selects).remove()
+        if next_selects.first()[0] and $this.val() and !$this.val().match(/--.*--/) # init next child
+          $.get "/china_city/#{$(@).val()}", (data) ->
+            data = data.data if data.data?
+            next_selects.first()[0].options.add(new Option(option[0], option[1])) for option in data
+            # init value after data completed.
+            next_selects.trigger('china_city:load_data_completed');
 
-  $ ->
-    ($cityGroup = $('.city-group')).length and $cityGroup.china_city()
-)(jQuery)
+  $(document).on 'ready page:change', ->
+    $('.city-group').china_city()
+)(if typeof(jQuery)=="function" then jQuery else Zepto)
